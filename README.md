@@ -18,12 +18,12 @@ Half-Life renders the maps alongside Minecraft's blocks, mobs, and interface. Mi
 
 - Windows 10 or 11, 64-bit, with PowerShell 7 and Git for Windows.
 - Steam Half-Life, 25th Anniversary branch, using the OpenGL renderer.
-- Minecraft Java **26.3**, Fabric Loader **0.19.5** or later, and [Fabric API **0.161.0+26.3**](https://modrinth.com/mod/fabric-api/versions?g=26.3). Use your own Minecraft installation and a separate game directory for the crossover.
+- Minecraft Java **26.3**, Fabric Loader **0.19.5** or later, and [Fabric API **0.161.0+26.3**](https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/0.161.0+26.3/fabric-api-0.161.0+26.3.jar). Set up a Fabric profile for **26.3** in your launcher and give it a separate game directory. [Fabric installation guide](https://docs.fabricmc.net/players/installing-fabric/windows)
 - JDK 25, Visual Studio 2022 Build Tools with MSVC v143 x86/x64, and a Windows SDK. The first build downloads source archives and Gradle dependencies.
 
 ## Build
 
-Open PowerShell 7 in the package directory. Set `JAVA_HOME` to your JDK 25 folder or pass `-JavaHome` with its path. Run:
+Download the repository with [Code → Download ZIP](https://github.com/lqnderk/minecraft-x-halflife/archive/refs/heads/main.zip) and extract it. Open PowerShell 7 in the extracted directory. Set `JAVA_HOME` to your JDK 25 folder or pass `-JavaHome` with its path. Run the build.
 
 ```powershell
 .\Build.ps1
@@ -31,9 +31,11 @@ Open PowerShell 7 in the package directory. Set `JAVA_HOME` to your JDK 25 folde
 
 If Visual Studio Build Tools is installed in a location that `vswhere` cannot find, pass `-MSBuild` with the full path to `MSBuild.exe`. The build runs the Fabric tests and puts the installable files under `.build/dist`. For a clean rebuild in another folder, pass `-WorkDirectory` with a new path.
 
+If PowerShell blocks `Build.ps1` because it was downloaded, inspect the script and run `Unblock-File -LiteralPath .\Build.ps1` before retrying. [PowerShell execution policies](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies#manage-signed-and-unsigned-scripts)
+
 ## Install and play
 
-1. Close both games. Copy `.build/dist/mchl` into the Steam Half-Life directory next to `hl.exe`. If you already have an `mchl` directory, back it up before updating its files.
+1. Close both games. In Steam, right-click **Half-Life** and choose **Manage → Browse local files**. Copy `.build/dist/mchl` into that directory, next to `hl.exe`. If you already have an `mchl` directory, back it up before updating its files.
 2. Put `.build/dist/minecraft/mods/skycraft-mchl-0.1.2.jar` and Fabric API in the `mods` directory of your separate Minecraft 26.3 profile. Keep one SkyCraft JAR in that profile. The build uses Minecraft's own rendered player and skips the upstream project's optional replacement GoldSrc weapon models.
 3. Start the Half-Life mod. Substitute the full path to your own `steam.exe` in this example:
 
