@@ -1,0 +1,61 @@
+diff --git a/fabric/src/main/java/dev/skycraft/link/SkyLink.java b/fabric/src/main/java/dev/skycraft/link/SkyLink.java
+--- a/fabric/src/main/java/dev/skycraft/link/SkyLink.java
++++ b/fabric/src/main/java/dev/skycraft/link/SkyLink.java
+@@ -21,2 +21,5 @@
+ 	private static final int FILE_MAP_ALL_ACCESS = 0xF001F;
++	private static final int SYNCHRONIZE = 0x00100000;
++	private static final int ERROR_INVALID_PARAMETER = 87;
++	private static final int WAIT_OBJECT_0 = 0;
+ 	// Skyrim's loading screens can stall its heartbeat for several seconds.
+@@ -39,2 +42,5 @@
+ 	private static final MethodHandle CREATE_MUTEX;
++	private static final MethodHandle OPEN_PROCESS;
++	private static final MethodHandle WAIT_FOR_SINGLE_OBJECT;
++	private static final MethodHandle CLOSE_HANDLE;
+ 	private static MemorySegment runningMutex;
+@@ -56,2 +62,7 @@
+ 		CREATE_MUTEX = linker.downcallHandle(k32.find("CreateMutexW").orElseThrow(), FunctionDescriptor.of(ADDRESS, ADDRESS, JAVA_INT, ADDRESS));
++		OPEN_PROCESS = linker.downcallHandle(
++			k32.find("OpenProcess").orElseThrow(), FunctionDescriptor.of(ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT), Linker.Option.captureCallState("GetLastError")
++		);
++		WAIT_FOR_SINGLE_OBJECT = linker.downcallHandle(k32.find("WaitForSingleObject").orElseThrow(), FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT));
++		CLOSE_HANDLE = linker.downcallHandle(k32.find("CloseHandle").orElseThrow(), FunctionDescriptor.of(JAVA_INT, ADDRESS));
+ 	}
+@@ -100,2 +111,24 @@
+ 		return skyrimPid;
++	}
++
++	/** Checks for confirmed exit using only permission to wait for the process. */
++	public static boolean hostExited(int pid) {
++		if (pid == 0 || active()) {
++			return false;
++		}
++		try (Arena arena = Arena.ofConfined()) {
++			MemorySegment state = arena.allocate(CALL_STATE);
++			MemorySegment process = (MemorySegment) OPEN_PROCESS.invokeExact(state, SYNCHRONIZE, 0, pid);
++			if (process.address() == 0) {
++				return (int) LAST_ERROR.get(state, 0L) == ERROR_INVALID_PARAMETER;
++			}
++			try {
++				return (int) WAIT_FOR_SINGLE_OBJECT.invokeExact(process, 0) == WAIT_OBJECT_0;
++			} finally {
++				int ignored = (int) CLOSE_HANDLE.invokeExact(process);
++			}
++		} catch (Throwable t) {
++			SkyCraft.LOG.warn("SkyCraft: could not check host process {}", pid, t);
++			return false;
++		}
+ 	}
+diff --git a/fabric/src/client/java/dev/skycraft/client/SkyClient.java b/fabric/src/client/java/dev/skycraft/client/SkyClient.java
+--- a/fabric/src/client/java/dev/skycraft/client/SkyClient.java
++++ b/fabric/src/client/java/dev/skycraft/client/SkyClient.java
+@@ -171,3 +171,3 @@
+ 		nextSkyrimCheck = now + 1000;
+-		if (ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false)) {
++		if (!SkyLink.hostExited(pid)) {
+ 			skyrimGoneSince = 0;
+@@ -178,3 +178,3 @@
+ 		} else if (now - skyrimGoneSince > 5000) {
+-			SkyCraft.LOG.info("SkyCraft: Skyrim (pid {}) has closed; saving and quitting", pid);
++			SkyCraft.LOG.info("SkyCraft: host (pid {}) has closed; saving and quitting", pid);
+ 			minecraft.stop();

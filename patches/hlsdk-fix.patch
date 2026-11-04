@@ -1,0 +1,66 @@
+diff --git a/cl_dll/inputw32.cpp b/cl_dll/inputw32.cpp
+--- a/cl_dll/inputw32.cpp
++++ b/cl_dll/inputw32.cpp
+@@ -27,2 +27,3 @@
+ #include <SDL2/SDL_mouse.h>
++#include <SDL2/SDL_video.h>
+ #include <SDL2/SDL_gamecontroller.h>
+@@ -86,2 +87,10 @@
+ }
++
++#ifdef _WIN32
++static bool IN_UseScreenMousePosition()
++{
++	// Relative deltas alone stop at the screen edge if SDL lost its mouse capture.
++	return !IN_UseRawInput() || ( !SDL_GetRelativeMouseMode() && SDL_GetKeyboardFocus() );
++}
++#endif
+ 
+@@ -388,3 +397,3 @@
+ #ifdef _WIN32
+-	if ( !IN_UseRawInput() && mouseactive && gEngfuncs.GetWindowCenterX && gEngfuncs.GetWindowCenterY )
++	if ( IN_UseScreenMousePosition() && mouseactive && gEngfuncs.GetWindowCenterX && gEngfuncs.GetWindowCenterY )
+ 	{
+@@ -518,5 +527,6 @@
+ #ifdef _WIN32
+-		if ( !IN_UseRawInput() )
+-		{
+-			if ( m_bMouseThread )
++		const bool useScreenPosition = IN_UseScreenMousePosition();
++		if ( useScreenPosition )
++		{
++			if ( s_hMouseThread )
+ 			{
+@@ -541,5 +551,5 @@
+ #ifdef _WIN32
+-		if ( !IN_UseRawInput() )
+-		{
+-			if ( m_bMouseThread )
++		if ( useScreenPosition )
++		{
++			if ( s_hMouseThread )
+ 			{
+@@ -563,2 +573,6 @@
+ 		my_accum = 0;
++
++		// Recenter even when Minecraft's inventory consumes the movement below.
++		if ( mx || my )
++			IN_ResetMouse();
+ 
+@@ -613,7 +627,2 @@
+ 
+-		// if the mouse has moved, force it to the center, so there's room to move
+-		if ( mx || my )
+-		{
+-			IN_ResetMouse();
+-		}
+ 	}
+@@ -648,5 +657,5 @@
+ #ifdef _WIN32
+-			if ( !IN_UseRawInput() )
+-			{
+-				if ( !m_bMouseThread )
++			if ( IN_UseScreenMousePosition() )
++			{
++				if ( !s_hMouseThread )
+ 				{
