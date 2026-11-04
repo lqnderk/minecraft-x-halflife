@@ -1,6 +1,18 @@
-# Minecraft X Half-Life — Windows build fixes
+# Minecraft × Half-Life
 
-Builds the [Minecraft X Half-Life](https://github.com/SawyerTheNerd/Minecraft-X-HalfLife) crossover from its original sources and applies two fixes for Windows. Half-Life renders its own maps with Minecraft's blocks and mobs, and displays Minecraft's hotbar and inventory. Minecraft Java runs locally alongside it and handles Minecraft gameplay.
+**Play Minecraft inside Half-Life 1.** Explore Black Mesa, place blocks in its corridors, and use Minecraft tools and inventory on the original Half-Life maps.
+
+![Minecraft oak planks, shield, and hotbar inside the Black Mesa Training Facility](media/black-mesa-training-facility.jpg)
+
+*Placing oak planks in Half-Life's Hazard Course.*
+
+Half-Life renders the maps alongside Minecraft's blocks, mobs, and interface. Minecraft Java runs in the background and handles movement, inventory, and block interactions.
+
+## Gameplay
+
+![Looking down from a platform made of oak planks inside a Half-Life map](media/hazard-course-building.jpg)
+
+*Building above a Half-Life passage with Minecraft blocks.*
 
 ## Requirements
 
@@ -42,5 +54,5 @@ This build is for local single-player. Live verification covered connecting thro
 ## Credits and distribution
 
 - [SawyerTheNerd](https://github.com/SawyerTheNerd/Minecraft-X-HalfLife) made the Half-Life port of [chasmlol's SkyCraft](https://github.com/chasmlol/SkyCraft). [Valve's Half-Life SDK](https://github.com/ValveSoftware/halflife) provides the GoldSrc game code.
-- The Windows fixes and build script were prepared with OpenAI Codex using [Universal Modder](https://github.com/rehan-remade/universal-modder).
+- Gameplay screenshots by [lqnderk](https://github.com/lqnderk). The local patches and build script were prepared with OpenAI Codex using [Universal Modder](https://github.com/rehan-remade/universal-modder).
 - This companion package contains the local changes and build instructions. It retrieves the pinned port, SkyCraft and Valve SDK from their original repositories. It contains no upstream source tree, compiled mod, game assets, saves or launcher data. Upstream terms apply to those downloads. The original port does not declare a standalone redistribution license. Check with its author before rehosting its source or publishing binaries built from it.
