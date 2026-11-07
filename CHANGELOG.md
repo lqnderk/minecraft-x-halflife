@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.6
+
+- Extract MinGit and JDK archives using Windows tar instead of the PowerShell archive module.
+
 ## 0.2.5
 
 - Detect Prism Launcher even when it runs from a custom or portable folder.

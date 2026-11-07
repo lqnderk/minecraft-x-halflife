@@ -22,6 +22,13 @@ function Fetch($url, $path, $sha256) {
     Move-Item -LiteralPath "$path.download" -Destination $path -Force
 }
 
+function Extract-ToolArchive($archive, $destination) {
+    [void][IO.Directory]::CreateDirectory($destination)
+    $tar = [IO.Path]::Combine($env:SystemRoot, 'System32', 'tar.exe')
+    & $tar -xf $archive -C $destination
+    if ($LASTEXITCODE -ne 0) { throw "Could not extract $archive (tar exited with $LASTEXITCODE)." }
+}
+
 function Find-Game {
     $steam = (Get-ItemProperty 'HKCU:\Software\Valve\Steam' -ErrorAction SilentlyContinue).SteamPath
     if (-not $steam) { $steam = (Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Valve\Steam' -ErrorAction SilentlyContinue).InstallPath }
@@ -142,7 +149,8 @@ function Prepare-Tools {
             if (-not $asset -or $asset.digest -notmatch '^sha256:([a-f0-9]{64})$') { throw 'MinGit download or checksum unavailable.' }
             $zip = Join-Path $toolsDir 'mingit.zip'
             Fetch $asset.browser_download_url $zip $Matches[1]
-            Expand-Archive -LiteralPath $zip -DestinationPath (Join-Path $toolsDir 'mingit') -Force
+            Extract-ToolArchive $zip (Join-Path $toolsDir 'mingit')
+            if (-not (Test-Path -LiteralPath $git -PathType Leaf)) { throw 'MinGit executable missing after extraction.' }
         }
         $env:Path = "$(Split-Path $git);$env:Path"
     }
@@ -156,8 +164,11 @@ function Prepare-Tools {
         if ($asset.checksum -notmatch '^[a-f0-9]{64}$') { throw 'JDK checksum unavailable.' }
         $zip = Join-Path $toolsDir 'jdk25.zip'
         Fetch $asset.link $zip $asset.checksum
-        Expand-Archive -LiteralPath $zip -DestinationPath $javaRoot -Force
-        $jdk = (Get-ChildItem $javaRoot -Directory -Filter 'jdk-25*' | Select-Object -First 1).FullName
+        Extract-ToolArchive $zip $javaRoot
+        $jdk = (Get-ChildItem $javaRoot -Directory -Filter 'jdk-25*' |
+            Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'bin\javac.exe') -PathType Leaf } |
+            Select-Object -First 1).FullName
+        if (-not $jdk) { throw 'JDK executable missing after extraction.' }
     }
     $msbuild = Find-MSBuild
     if (-not $msbuild) {
