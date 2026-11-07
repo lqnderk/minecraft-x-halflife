@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+- Support PowerShell 7 when the Windows PowerShell entry point has been redirected, without loading modules through Windows PowerShell compatibility.
+
 ## 0.2.2
 
 - Restrict Windows PowerShell module lookup to the built-in modules after startup so external PowerShell installations cannot shadow them.

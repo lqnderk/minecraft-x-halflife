@@ -1,9 +1,5 @@
 #Requires -Version 5.1
 param([switch]$Check, [switch]$Launch, [ValidateSet('Auto','Legacy','Official','Prism')][string]$Launcher='Auto')
-if ($PSVersionTable.PSEdition -ne 'Desktop') {
-    [Console]::Error.WriteLine('This installer requires the built-in Windows PowerShell 5.1. Run Install.cmd.')
-    exit 1
-}
 $ErrorActionPreference = 'Stop'
 # Windows PowerShell can reconstruct PSModulePath from registry settings on startup.
 $env:PSModulePath = [IO.Path]::Combine($PSHOME, 'Modules')
@@ -49,7 +45,10 @@ function Find-Launcher {
     $official = @((Join-Path ${env:ProgramFiles(x86)} 'Minecraft Launcher\MinecraftLauncher.exe'),
         (Join-Path $env:ProgramFiles 'Minecraft Launcher\MinecraftLauncher.exe')) |
         Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-    $store = Get-AppxPackage -Name 'Microsoft.4297127D64EC6_8wekyb3d8bbwe' -ErrorAction SilentlyContinue
+    $store = Test-Path (Join-Path $env:LOCALAPPDATA 'Packages\Microsoft.4297127D64EC6_8wekyb3d8bbwe')
+    if (-not $store -and $PSVersionTable.PSEdition -eq 'Desktop') {
+        $store = Get-AppxPackage -Name 'Microsoft.4297127D64EC6_8wekyb3d8bbwe' -ErrorAction SilentlyContinue
+    }
     $prism = @((Join-Path $env:LOCALAPPDATA 'Programs\PrismLauncher\prismlauncher.exe'),
         (Join-Path $env:ProgramFiles 'PrismLauncher\prismlauncher.exe'),
         (Get-Command prismlauncher.exe -ErrorAction SilentlyContinue).Source) |
@@ -137,6 +136,9 @@ function Prepare-Tools {
 }
 
 function Read-Json($path) {
+    if ($PSVersionTable.PSEdition -eq 'Core') {
+        return ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($path)) -AsHashtable
+    }
     Add-Type -AssemblyName System.Web.Extensions
     $json = New-Object System.Web.Script.Serialization.JavaScriptSerializer
     $json.MaxJsonLength = 16777216
@@ -258,7 +260,7 @@ try {
         }
     }
     $deploy = Join-Path $installDir 'Deploy-Half-Life.ps1'
-    $shell = Join-Path $PSHOME 'powershell.exe'
+    $shell = [Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Deploy-Half-Life.ps1') -Destination $deploy -Force
     $source = Join-Path $dist 'mchl'
     & $shell -NoProfile -ExecutionPolicy Bypass -File $deploy -Source $source -Game $game.Game
