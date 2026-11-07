@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4
+
+- Check PowerShell module loading before starting setup.
+- If the system shell is a preview or its modules fail to load, download and verify a portable copy of stable PowerShell.
+
 ## 0.2.3
 
 - Support PowerShell 7 when the Windows PowerShell entry point has been redirected, without loading modules through Windows PowerShell compatibility.
