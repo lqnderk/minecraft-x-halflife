@@ -7,6 +7,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($PSVersionTable.PSEdition -eq 'Desktop') {
+    $env:PSModulePath = [IO.Path]::Combine($PSHOME, 'Modules')
+}
 
 function Invoke-Checked($Executable, [string[]]$Arguments) {
     & $Executable @Arguments

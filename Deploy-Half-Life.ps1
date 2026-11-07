@@ -1,6 +1,7 @@
 #Requires -Version 5.1
 param([Parameter(Mandatory=$true)][string]$Source, [Parameter(Mandatory=$true)][string]$Game)
 $ErrorActionPreference = 'Stop'
+$env:PSModulePath = [IO.Path]::Combine($PSHOME, 'Modules')
 try {
     if (Get-Process hl -ErrorAction SilentlyContinue) { throw 'Close Half-Life before installing.' }
     if (-not (Test-Path (Join-Path $Game 'hl.exe') -PathType Leaf)) { throw 'Invalid Half-Life directory.' }

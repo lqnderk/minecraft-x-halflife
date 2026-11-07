@@ -1,6 +1,12 @@
 #Requires -Version 5.1
 param([switch]$Check, [switch]$Launch, [ValidateSet('Auto','Legacy','Official','Prism')][string]$Launcher='Auto')
+if ($PSVersionTable.PSEdition -ne 'Desktop') {
+    [Console]::Error.WriteLine('This installer requires the built-in Windows PowerShell 5.1. Run Install.cmd.')
+    exit 1
+}
 $ErrorActionPreference = 'Stop'
+# Windows PowerShell can reconstruct PSModulePath from registry settings on startup.
+$env:PSModulePath = [IO.Path]::Combine($PSHOME, 'Modules')
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $installDir = Join-Path $env:LOCALAPPDATA 'Minecraft X Half-Life'
 $toolsDir = Join-Path $installDir 'tools'

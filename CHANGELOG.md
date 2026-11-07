@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- Restrict Windows PowerShell module lookup to the built-in modules after startup so external PowerShell installations cannot shadow them.
+
 ## 0.2.1
 
 - Launch the installer with the built-in Windows PowerShell and a clean module search path.
