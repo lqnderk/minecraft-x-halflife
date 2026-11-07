@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Launch the installer with the built-in Windows PowerShell and a clean module search path.
+- Print the original installation error even if the PowerShell error-reporting module cannot load.
+
 ## 0.2.0
 
 - Added a Windows installer that finds Steam Half-Life and supported Minecraft launchers.

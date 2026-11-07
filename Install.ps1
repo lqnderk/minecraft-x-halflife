@@ -274,7 +274,11 @@ try {
     $shortcut.Save()
     Write-Host "Installed. Open Minecraft X Half-Life on your desktop. In $($client.Kind), select $version and press Play."
 } catch {
-    Write-Error $_ -ErrorAction Continue
-    if ($Launch) { Read-Host 'Press Enter to close' | Out-Null }
+    [Console]::Error.WriteLine($_.Exception.ToString())
+    [Console]::Error.WriteLine($_.InvocationInfo.PositionMessage)
+    if ($Launch) {
+        [Console]::WriteLine('Press Enter to close')
+        [void][Console]::ReadLine()
+    }
     exit 1
 }

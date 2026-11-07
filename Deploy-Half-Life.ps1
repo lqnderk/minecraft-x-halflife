@@ -26,6 +26,6 @@ try {
 } catch [System.UnauthorizedAccessException] {
     exit 5
 } catch {
-    Write-Error $_ -ErrorAction Continue
+    [Console]::Error.WriteLine($_.Exception.ToString())
     exit 1
 }
