@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0
+
+- Added a Windows installer that finds Steam Half-Life and supported Minecraft launchers.
+- The installer prepares build dependencies and a Fabric 26.3 profile, installs the locally built mod, and creates a desktop shortcut.
+
 ## 0.1.0
 
 - Build the native Half-Life client and server DLLs and the Fabric mod from pinned source revisions on Windows.

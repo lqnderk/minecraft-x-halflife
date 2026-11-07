@@ -14,7 +14,16 @@ Half-Life renders the maps alongside Minecraft's blocks, mobs, and interface. Mi
 
 *Building above a Half-Life passage with Minecraft blocks.*
 
-## Requirements
+## Quick install on Windows
+
+1. Install and open Steam Half-Life and a Minecraft Java launcher at least once. The installer detects Half-Life across Steam libraries and supports standard installations of Legacy Launcher, the official Minecraft Launcher, and Prism Launcher.
+2. Download **Minecraft-X-Half-Life-Installer.zip** from [Releases](https://github.com/lqnderk/minecraft-x-halflife/releases/latest), extract it, close both games and their Minecraft launcher, then double-click **Install.cmd**.
+3. Wait for the build. The installer downloads missing tools and may ask for administrator approval for Microsoft C++ Build Tools or copying the mod into a protected Steam library. The first run needs an internet connection, time for downloads, and several GB of free disk space.
+4. Open **Minecraft X Half-Life** on your desktop. Start the prepared Minecraft profile if your launcher does not launch it automatically. Legacy uses **Fabric 26.3** or **fabric-loader-0.19.5-26.3**. The official launcher and Prism use **Minecraft X Half-Life**.
+
+The installer builds the mod locally from its sources. Steam Half-Life and access to Minecraft Java are required. Legacy uses its standard game folder and shares its `mods` directory with other Legacy profiles. The official launcher and Prism get separate game directories. For multiple supported launchers, use `Install.cmd -Launcher Legacy`, `Official`, or `Prism` to choose one explicitly. `Install.cmd -Check` only detects the installations.
+
+## Manual build requirements
 
 - Windows 10 or 11, 64-bit, with PowerShell 7 and Git for Windows.
 - Steam Half-Life, 25th Anniversary branch, using the OpenGL renderer.

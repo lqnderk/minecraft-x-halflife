@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 5.1
 param(
     [string]$JavaHome = $env:JAVA_HOME,
     [string]$MSBuild,
@@ -24,7 +24,7 @@ function Get-Source($Repository, $Revision, $Destination) {
     $archive = Join-Path $cache ($Revision + '.zip')
     if (-not (Test-Path -LiteralPath $archive)) {
         $partial = "$archive.download"
-        Invoke-WebRequest "https://codeload.github.com/$Repository/zip/$Revision" -OutFile $partial
+        Invoke-WebRequest "https://codeload.github.com/$Repository/zip/$Revision" -UseBasicParsing -OutFile $partial
         [IO.File]::Move($partial, $archive)
     }
     New-Item -ItemType Directory -Path $Destination | Out-Null
