@@ -8,7 +8,7 @@ if errorlevel 1 (
     call :preparePortable
     if errorlevel 1 goto :failed
 )
-"%installerShell%" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install.ps1" %*
+"%installerShell%" -NoLogo -NoProfile -Sta -ExecutionPolicy Bypass -File "%~dp0Install.ps1" %*
 set "result=%errorlevel%"
 pause
 exit /b %result%

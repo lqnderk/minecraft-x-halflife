@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.5
+
+- Detect Prism Launcher even when it runs from a custom or portable folder.
+- Let the user pick the Prism executable if automatic detection fails. Keep the same Prism data folder when opening the crossover.
+
 ## 0.2.4
 
 - Check PowerShell module loading before starting setup.

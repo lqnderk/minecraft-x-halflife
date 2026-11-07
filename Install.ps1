@@ -1,5 +1,11 @@
 #Requires -Version 5.1
-param([switch]$Check, [switch]$Launch, [ValidateSet('Auto','Legacy','Official','Prism')][string]$Launcher='Auto')
+param(
+    [switch]$Check,
+    [switch]$Launch,
+    [ValidateSet('Auto','Legacy','Official','Prism')][string]$Launcher='Auto',
+    [string]$PrismPath,
+    [string]$PrismDataPath
+)
 $ErrorActionPreference = 'Stop'
 # Windows PowerShell can reconstruct PSModulePath from registry settings on startup.
 $env:PSModulePath = [IO.Path]::Combine($PSHOME, 'Modules')
@@ -40,7 +46,45 @@ function Find-Game {
     throw 'Half-Life is missing. Install Half-Life from the Steam Library and run Install.cmd again.'
 }
 
+function Get-PrismProfile($exe) {
+    if (-not $exe -or [IO.Path]::GetFileName($exe) -ine 'prismlauncher.exe' -or
+        -not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+        throw 'Select an existing prismlauncher.exe.'
+    }
+    $exe = (Resolve-Path -LiteralPath $exe).Path
+    $folder = Split-Path -LiteralPath $exe
+    $root = Join-Path $env:APPDATA 'PrismLauncher'
+    if ($PrismDataPath) {
+        if (-not (Test-Path -LiteralPath $PrismDataPath -PathType Container)) { throw 'Prism data folder not found.' }
+        $root = (Resolve-Path -LiteralPath $PrismDataPath).Path
+    } elseif ((Test-Path (Join-Path $folder 'portable.txt')) -or
+              (Test-Path (Join-Path $folder 'prismlauncher.cfg')) -or
+              (Test-Path (Join-Path $folder 'instances') -PathType Container)) {
+        $root = $folder
+    }
+    return @{Kind='Prism'; Exe=$exe; Root=$root}
+}
+
+function Select-PrismFile {
+    Add-Type -AssemblyName System.Windows.Forms
+    $dialog = New-Object System.Windows.Forms.OpenFileDialog
+    try {
+        $dialog.Title = 'Select Prism Launcher (prismlauncher.exe)'
+        $dialog.Filter = 'Prism Launcher (prismlauncher.exe)|prismlauncher.exe'
+        $dialog.CheckFileExists = $true
+        if ($dialog.ShowDialog() -eq [Windows.Forms.DialogResult]::OK) { return $dialog.FileName }
+    } finally {
+        $dialog.Dispose()
+    }
+}
+
 function Find-Launcher {
+    if ($Launcher -in 'Auto','Prism') {
+        if ($PrismPath) { return Get-PrismProfile $PrismPath }
+        $activePrism = Get-Process prismlauncher -ErrorAction SilentlyContinue |
+            ForEach-Object Path | Where-Object { $_ } | Select-Object -First 1
+        if ($activePrism) { return Get-PrismProfile $activePrism }
+    }
     $legacy = Join-Path $env:APPDATA '.tlauncher\legacy\Minecraft\LL.exe'
     $official = @((Join-Path ${env:ProgramFiles(x86)} 'Minecraft Launcher\MinecraftLauncher.exe'),
         (Join-Path $env:ProgramFiles 'Minecraft Launcher\MinecraftLauncher.exe')) |
@@ -70,8 +114,13 @@ function Find-Launcher {
     if ($Launcher -in 'Auto','Official' -and ($official -or $store)) {
         return @{Kind='Official'; Exe=$official; Root=(Join-Path $env:APPDATA '.minecraft')}
     }
-    if ($Launcher -in 'Auto','Prism' -and $prism) {
-        return @{Kind='Prism'; Exe=$prism; Root=(Join-Path $env:APPDATA 'PrismLauncher')}
+    if ($Launcher -in 'Auto','Prism') {
+        if ($prism) { return Get-PrismProfile $prism }
+        if (-not $Check) {
+            Write-Host 'Prism was not found automatically. Select prismlauncher.exe if you have it.'
+            $selectedPrism = Select-PrismFile
+            if ($selectedPrism) { return Get-PrismProfile $selectedPrism }
+        }
     }
     throw 'Install and open a supported launcher (Legacy, official Minecraft Launcher, or Prism), then run Install.cmd again.'
 }
@@ -154,7 +203,16 @@ function Prepare-Profile($client, $jar, $api, $jdk) {
     $version = $fabric
     $gameDir = $client.Root
     if ($client.Kind -eq 'Prism') {
-        $instance = Join-Path $client.Root 'instances\Minecraft-X-Half-Life'
+        $instances = Join-Path $client.Root 'instances'
+        $prismConfig = Join-Path $client.Root 'prismlauncher.cfg'
+        if (Test-Path -LiteralPath $prismConfig) {
+            $configured = [regex]::Match((Get-Content -LiteralPath $prismConfig -Raw), '(?m)^InstanceDir=([^\r\n]+)').Groups[1].Value.Trim('"')
+            if ($configured) {
+                if ([IO.Path]::IsPathRooted($configured)) { $instances = $configured }
+                else { $instances = Join-Path $client.Root $configured }
+            }
+        }
+        $instance = Join-Path $instances 'Minecraft-X-Half-Life'
         New-Item -ItemType Directory -Path $instance -Force | Out-Null
         $cfg = Join-Path $instance 'instance.cfg'
         if (-not (Test-Path $cfg)) {
@@ -222,7 +280,8 @@ try {
         if (Get-Process hl -ErrorAction SilentlyContinue) { throw 'Close the running Half-Life before starting the crossover.' }
         Start-Process -FilePath $saved.Steam -ArgumentList '-applaunch 70 -game mchl -insecure -gl -windowed -novid -condebug +map t0a0'
         if ($saved.Kind -eq 'Prism') {
-            Start-Process -FilePath $saved.Exe -ArgumentList '--launch Minecraft-X-Half-Life'
+            $prismArgs = if ($saved.Root) { '--dir "{0}" --launch Minecraft-X-Half-Life' -f $saved.Root } else { '--launch Minecraft-X-Half-Life' }
+            Start-Process -FilePath $saved.Exe -WorkingDirectory (Split-Path -LiteralPath $saved.Exe) -ArgumentList $prismArgs
         } elseif ($saved.Exe) {
             Start-Process -FilePath $saved.Exe
         } else {
@@ -236,7 +295,11 @@ try {
     $client = Find-Launcher
     Write-Host "Half-Life: $($game.Game)"
     Write-Host "Minecraft launcher: $($client.Kind)"
+    Write-Host "Launcher data: $($client.Root)"
     if ($Check) { exit 0 }
+    if ($client.Kind -eq 'Prism' -and (Get-Process prismlauncher -ErrorAction SilentlyContinue)) {
+        [void](Read-Host 'Prism Launcher was found. Close Minecraft and Prism, then press Enter to continue')
+    }
     if (Get-Process hl,LL,Minecraft,MinecraftLauncher,prismlauncher,javaw -ErrorAction SilentlyContinue |
         Where-Object { $_.ProcessName -ne 'javaw' -or $_.MainWindowTitle -match 'Minecraft|Legacy|\u041b\u0435\u0433\u0430\u0441\u0438' }) {
         throw 'Close Half-Life, Minecraft, and your Minecraft launcher before installing.'
@@ -272,7 +335,7 @@ try {
     $version = Prepare-Profile $client $jar $api $toolchain.Java
     $installedScript = Join-Path $installDir 'Install.ps1'
     Copy-Item -LiteralPath $PSCommandPath -Destination $installedScript -Force
-    Write-Json (Join-Path $installDir 'launch.json') @{Steam=$game.Steam;Kind=$client.Kind;Exe=$client.Exe;Version=$version}
+    Write-Json (Join-Path $installDir 'launch.json') @{Steam=$game.Steam;Kind=$client.Kind;Exe=$client.Exe;Version=$version;Root=$client.Root}
     $desktop = [Environment]::GetFolderPath('DesktopDirectory')
     $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $desktop 'Minecraft X Half-Life.lnk'))
     $shortcut.TargetPath = $shell
